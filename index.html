@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Level Up!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .container {
+            max-width: 800px;
+            min-height: 500px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div id="game-container" class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl flex flex-col justify-between container transition-transform transform scale-100">
+        <!-- Main Game Content -->
+        <div id="game-content" class="flex flex-col flex-grow">
+            <!-- Header and Progress -->
+            <div class="flex justify-between items-center mb-6">
+                <h1 id="game-title" class="text-3xl font-bold text-gray-800 transition-opacity opacity-100 text-right">اختبار تحديد المستوى</h1>
+                <div class="relative w-1/2 bg-gray-200 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-indigo-500 h-2.5 rounded-full transition-all duration-500 ease-in-out" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Question & Answers -->
+            <div id="question-card" class="bg-indigo-50 rounded-xl p-6 shadow-inner flex-grow flex flex-col justify-center text-center transition-opacity duration-500 opacity-0">
+                <p id="question-text" class="text-2xl font-semibold text-gray-700 mb-6"></p>
+                <div id="answers-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Answer buttons will be generated here by JavaScript -->
+                </div>
+                <p id="feedback-message" class="text-xl font-bold mt-4 text-center"></p>
+            </div>
+
+            <!-- Start Screen -->
+            <div id="start-screen" class="text-center transition-opacity duration-500 opacity-100">
+                <h2 class="text-4xl font-extrabold text-indigo-600 mb-4">أهلاً بك في تحدي اللغة الإنجليزية!</h2>
+                <p class="text-lg text-gray-600 mb-8">ابدأ رحلتك لاكتشاف مستواك في اللغة الإنجليزية. أجب عن 20 سؤالاً لتعرف مستواك!</p>
+                <button id="start-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-indigo-300">
+                    ابدأ الاختبار
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden flex flex-col items-center justify-center text-center transition-opacity duration-500 opacity-0 absolute inset-0 bg-white rounded-2xl p-8">
+            <h2 id="result-title" class="text-4xl font-extrabold text-indigo-600 mb-4"></h2>
+            <p id="result-message" class="text-xl text-gray-600 mb-8"></p>
+            <button id="restart-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-8 rounded-full shadow-lg transform transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-gray-300">
+                إعادة الاختبار
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Use an IIFE (Immediately Invoked Function Expression) to avoid global scope pollution
+        (() => {
+            // --- Game Configuration & Data ---
+            const questions = [
+                // Beginner Questions (A1-A2)
+                { q: "What is the past tense of 'go'?", a: ["went", "goed", "gone", "going"], correct: 0, level: "A1" },
+                { q: "Choose the correct sentence:", a: ["He do his homework.", "He does his homework.", "He did his homeworks.", "He is do his homework."], correct: 1, level: "A1" },
+                { q: "Where is the cat?", a: ["The cat is on the table.", "The cat are on the table.", "The cat is in the table.", "The cat on the table."], correct: 0, level: "A1" },
+                { q: "Which word is the opposite of 'big'?", a: ["small", "large", "tall", "long"], correct: 0, level: "A1" },
+                { q: "I have two ____.", a: ["apple", "apples", "the apple", "an apple"], correct: 1, level: "A2" },
+                { q: "He ____ TV every night.", a: ["watch", "watches", "is watching", "watched"], correct: 1, level: "A2" },
+                { q: "They ____ to the park yesterday.", a: ["go", "goes", "went", "going"], correct: 2, level: "A2" },
+                // Intermediate Questions (B1-B2)
+                { q: "Which word is a synonym for 'happy'?", a: ["sad", "joyful", "angry", "tired"], correct: 1, level: "B1" },
+                { q: "She has been working for eight hours. She _____ tired.", a: ["must be", "must have been", "could be", "was"], correct: 0, level: "B1" },
+                { q: "I wish I _____ to swim.", a: ["know", "knew", "knows", "have known"], correct: 1, level: "B1" },
+                { q: "The book was written _____ a famous author.", a: ["with", "from", "by", "at"], correct: 2, level: "B1" },
+                { q: "We were having dinner when the phone _____.", a: ["ringed", "rang", "had rung", "has rung"], correct: 1, level: "B2" },
+                { q: "He's the man _____ car was stolen.", a: ["who's", "whose", "that", "which"], correct: 1, level: "B2" },
+                { q: "The concert was cancelled _____ the heavy rain.", a: ["because", "due to", "as a result", "since"], correct: 1, level: "B2" },
+                { q: "I would have gone to the party if I _____ an invitation.", a: ["had got", "got", "would get", "have got"], correct: 0, level: "B2" },
+                // Advanced Questions (C1-C2)
+                { q: "Complete the sentence: 'Had she studied harder, she _____ the exam.'", a: ["would pass", "would have passed", "passed", "will pass"], correct: 1, level: "C1" },
+                { q: "Choose the word with the opposite meaning of 'benevolent'.", a: ["kind", "generous", "malevolent", "amicable"], correct: 2, level: "C1" },
+                { q: "The company's success is due to its _____ use of resources.", a: ["judicious", "judiciary", "judicial", "judicature"], correct: 0, level: "C1" },
+                { q: "He spoke with such _____ that everyone was convinced.", a: ["eloquent", "eloquence", "eloquently", "eloquency"], correct: 1, level: "C2" },
+                { q: "The project was finalized after a long process of _____.", a: ["deliberation", "deliberate", "deliberating", "deliberated"], correct: 0, level: "C2" }
+            ];
+
+            // --- DOM Elements ---
+            const startScreen = document.getElementById('start-screen');
+            const gameContent = document.getElementById('game-content');
+            const resultScreen = document.getElementById('result-screen');
+            const startButton = document.getElementById('start-button');
+            const restartButton = document.getElementById('restart-button');
+            const questionCard = document.getElementById('question-card');
+            const questionText = document.getElementById('question-text');
+            const answersContainer = document.getElementById('answers-container');
+            const progressBar = document.getElementById('progress-bar');
+            const resultTitle = document.getElementById('result-title');
+            const resultMessage = document.getElementById('result-message');
+            const feedbackMessage = document.getElementById('feedback-message');
+
+            // --- Game State ---
+            let currentQuestionIndex = 0;
+            let score = 0;
+
+            // --- Audio Setup (using Tone.js) ---
+            const correctSynth = new Tone.Synth({
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.05, decay: 0.2, sustain: 0.1, release: 0.5 }
+            }).toDestination();
+            const incorrectSynth = new Tone.Synth({
+                oscillator: { type: "square" },
+                envelope: { attack: 0.05, decay: 0.3, sustain: 0.1, release: 0.5 }
+            }).toDestination();
+            const correctNote = "C5";
+            const incorrectNote = "C2";
+
+            const playSound = (isCorrect) => {
+                if (isCorrect) {
+                    correctSynth.triggerAttackRelease(correctNote, "8n");
+                } else {
+                    incorrectSynth.triggerAttackRelease(incorrectNote, "8n");
+                }
+            };
+
+            // --- Game Logic Functions ---
+
+            // Displays the current question and its answer choices
+            const displayQuestion = () => {
+                const question = questions[currentQuestionIndex];
+                questionText.textContent = question.q;
+                answersContainer.innerHTML = '';
+                feedbackMessage.textContent = ''; // Clear feedback message
+
+                question.a.forEach((answer, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = answer;
+                    button.className = "answer-button bg-gray-200 hover:bg-indigo-200 text-gray-800 font-medium py-3 px-6 rounded-lg shadow-md transform transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-indigo-300 text-left";
+                    button.setAttribute('data-index', index);
+                    answersContainer.appendChild(button);
+                });
+
+                // Animate question card visibility
+                questionCard.classList.remove('opacity-0');
+                questionCard.classList.add('opacity-100');
+            };
+
+            // Updates the progress bar
+            const updateProgressBar = () => {
+                const progress = ((currentQuestionIndex) / questions.length) * 100;
+                progressBar.style.width = `${progress}%`;
+            };
+
+            // Checks the selected answer and updates the score
+            const checkAnswer = (selectedIndex) => {
+                const correctAnswerIndex = questions[currentQuestionIndex].correct;
+                const isCorrect = selectedIndex === correctAnswerIndex;
+
+                playSound(isCorrect);
+
+                if (isCorrect) {
+                    score++;
+                    feedbackMessage.textContent = 'أحسنت! إجابة صحيحة.';
+                    feedbackMessage.className = 'text-xl font-bold mt-4 text-green-600 animate-pulse';
+                } else {
+                    feedbackMessage.textContent = 'للأسف، إجابة خاطئة. حاول مجددًا.';
+                    feedbackMessage.className = 'text-xl font-bold mt-4 text-red-600 animate-pulse';
+                }
+
+                // Briefly show feedback by coloring the button
+                const buttons = document.querySelectorAll('.answer-button');
+                buttons.forEach((button, index) => {
+                    button.disabled = true; // Disable all buttons
+                    if (index === correctAnswerIndex) {
+                        button.classList.add('bg-green-500', 'hover:bg-green-500', 'text-white', 'scale-105');
+                        button.classList.remove('bg-gray-200', 'hover:bg-indigo-200', 'text-gray-800');
+                    } else if (index === selectedIndex) {
+                        button.classList.add('bg-red-500', 'hover:bg-red-500', 'text-white', 'scale-105');
+                        button.classList.remove('bg-gray-200', 'hover:bg-indigo-200', 'text-gray-800');
+                    }
+                });
+
+                // Wait for a moment before moving to the next question
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    updateProgressBar();
+                    if (currentQuestionIndex < questions.length) {
+                        displayQuestion();
+                    } else {
+                        showResult();
+                    }
+                }, 1500);
+            };
+
+            // Displays the final result screen
+            const showResult = () => {
+                gameContent.classList.add('opacity-0', 'hidden');
+                resultScreen.classList.remove('hidden', 'opacity-0');
+                resultScreen.classList.add('opacity-100');
+
+                let level;
+                let message;
+                const totalQuestions = questions.length;
+                const scorePercentage = (score / totalQuestions) * 100;
+
+                if (scorePercentage >= 90) {
+                    level = "C1-C2 (متقدم)";
+                    message = "لديك إتقان مذهل للغة الإنجليزية. تهانينا!";
+                } else if (scorePercentage >= 70) {
+                    level = "B2 (متوسط متقدم)";
+                    message = "مهاراتك في اللغة الإنجليزية قوية جدًا. يمكنك التواصل بطلاقة في معظم المواقف.";
+                } else if (scorePercentage >= 50) {
+                    level = "B1 (متوسط)";
+                    message = "مهاراتك جيدة، ويمكنك فهم النصوص والمحادثات الأساسية. استمر في التدريب!";
+                } else if (scorePercentage >= 30) {
+                    level = "A2 (أساسي)";
+                    message = "أنت على المسار الصحيح! تحتاج إلى التركيز على القواعد والمفردات الأساسية.";
+                } else {
+                    level = "A1 (مبتدئ)";
+                    message = "أنت في بداية رحلتك. واصل التعلم وستتحسن بسرعة!";
+                }
+
+                resultTitle.textContent = `مستواك: ${level}`;
+                resultMessage.textContent = message;
+            };
+
+            // --- Event Listeners ---
+
+            // Start button listener
+            startButton.addEventListener('click', () => {
+                startScreen.classList.remove('opacity-100');
+                startScreen.classList.add('opacity-0', 'hidden');
+                questionCard.classList.remove('opacity-0');
+                questionCard.classList.add('opacity-100');
+                displayQuestion();
+                updateProgressBar();
+            });
+
+            // Restart button listener
+            restartButton.addEventListener('click', () => {
+                currentQuestionIndex = 0;
+                score = 0;
+                resultScreen.classList.remove('opacity-100');
+                resultScreen.classList.add('opacity-0', 'hidden');
+                gameContent.classList.remove('opacity-0', 'hidden');
+                gameContent.classList.add('opacity-100');
+                startScreen.classList.remove('hidden', 'opacity-0');
+                startScreen.classList.add('opacity-100');
+                progressBar.style.width = '0%';
+            });
+
+            // Answer button listener (delegation for dynamically created buttons)
+            answersContainer.addEventListener('click', (event) => {
+                const button = event.target.closest('.answer-button');
+                if (button) {
+                    const selectedIndex = parseInt(button.getAttribute('data-index'));
+                    checkAnswer(selectedIndex);
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>
