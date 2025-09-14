@@ -1,0 +1,181 @@
+const questions = [
+    {
+        question: "I am so tired. I think I'll ________ a nap.",
+        options: ["have", "make", "do", "take"],
+        answer: "take",
+        feedback: "Excellent! 'Take a nap' is the correct phrase."
+    },
+    {
+        question: "She ________ to the concert last night.",
+        options: ["go", "goes", "went", "is going"],
+        answer: "went",
+        feedback: "Amazing! 'Went' is the correct past tense of 'go.'"
+    },
+    {
+        question: "Could you please pass me ________ book on the table?",
+        options: ["a", "an", "the", "some"],
+        answer: "the",
+        feedback: "Brilliant! We use 'the' for a specific, known object."
+    },
+    {
+        question: "I have been studying English ________ five years.",
+        options: ["since", "for", "in", "from"],
+        answer: "for",
+        feedback: "Fantastic! 'For' is used to talk about a duration of time."
+    },
+    {
+        question: "What does the idiom 'break a leg' mean?",
+        options: ["to actually break a bone", "to wish someone good luck", "to tell someone to run fast", "to say goodbye"],
+        answer: "to wish someone good luck",
+        feedback: "Yes! 'Break a leg' is a common idiom to wish someone good luck."
+    },
+    {
+        question: "If I had more money, I ________ travel the world.",
+        options: ["would", "will", "would have", "can"],
+        answer: "would",
+        feedback: "Perfect! This is a classic example of the second conditional."
+    },
+    {
+        question: "Choose the correct spelling:",
+        options: ["recieve", "receive", "reciev", "receiv"],
+        answer: "receive",
+        feedback: "Well done! The correct spelling is 'receive.'"
+    },
+    {
+        question: "The movie was so ________ that I cried.",
+        options: ["bored", "boring", "boredly", "bore"],
+        answer: "boring",
+        feedback: "Spot on! We use '-ing' adjectives to describe the thing that causes the feeling."
+    },
+    {
+        question: "I've lost my keys. ________ you seen them?",
+        options: ["Are", "Did", "Have", "Do"],
+        answer: "Have",
+        feedback: "You've got it! We use 'have' with the present perfect tense."
+    },
+    {
+        question: "The woman ________ lives next door is a doctor.",
+        options: ["who", "which", "where", "whose"],
+        answer: "who",
+        feedback: "You did it! 'Who' is used to refer to people. Congratulations!"
+    }
+];
+
+// Get HTML elements
+const startScreen = document.getElementById('start-screen');
+const quizScreen = document.getElementById('quiz-screen');
+const resultScreen = document.getElementById('result-screen');
+
+const startButton = document.getElementById('start-button');
+const restartButton = document.getElementById('restart-button');
+
+const questionNumberElement = document.getElementById('question-number');
+const questionTextElement = document.getElementById('question-text');
+const optionsContainer = document.getElementById('options-container');
+
+const progressBar = document.getElementById('progress');
+const scoreText = document.getElementById('score-text');
+const feedbackText = document.getElementById('feedback-text');
+
+// Audio elements
+const successSound = document.getElementById('successSound');
+const failSound = document.getElementById('failSound');
+const bgMusic = document.getElementById('bgMusic');
+
+let currentQuestionIndex = 0;
+let score = 0;
+
+// Function to start the quiz
+function startQuiz() {
+    startScreen.classList.remove('active');
+    quizScreen.classList.add('active');
+    bgMusic.play();
+    currentQuestionIndex = 0;
+    score = 0;
+    loadQuestion();
+}
+
+// Function to load the next question
+function loadQuestion() {
+    updateProgressBar();
+    if (currentQuestionIndex < questions.length) {
+        const currentQuestion = questions[currentQuestionIndex];
+        questionNumberElement.textContent = `Question ${currentQuestionIndex + 1}`;
+        questionTextElement.textContent = currentQuestion.question;
+        optionsContainer.innerHTML = ''; // Clear previous options
+        currentQuestion.options.forEach(option => {
+            const optionElement = document.createElement('div');
+            optionElement.classList.add('option');
+            optionElement.textContent = option;
+            optionElement.addEventListener('click', () => checkAnswer(option, currentQuestion.answer, currentQuestion.feedback));
+            optionsContainer.appendChild(optionElement);
+        });
+    } else {
+        showResults();
+    }
+}
+
+// Function to check the user's answer
+function checkAnswer(selectedOption, correctAnswer, feedback) {
+    const options = document.querySelectorAll('.option');
+    let isCorrect = false;
+    options.forEach(option => {
+        if (option.textContent === correctAnswer) {
+            option.classList.add('correct');
+        }
+        if (option.textContent === selectedOption) {
+            if (selectedOption === correctAnswer) {
+                isCorrect = true;
+            } else {
+                option.classList.add('incorrect');
+            }
+        }
+        option.style.pointerEvents = 'none'; // Disable clicking other options
+    });
+
+    if (isCorrect) {
+        score++;
+        successSound.play();
+        setTimeout(() => {
+            alert(`Excellent! ${feedback}`);
+            currentQuestionIndex++;
+            loadQuestion();
+        }, 1000);
+    } else {
+        failSound.play();
+        setTimeout(() => {
+            alert(`Oops! Not quite right. The correct answer is '${correctAnswer}'. ${feedback.replace("Excellent! ", "").replace("Amazing! ", "").replace("Brilliant! ", "").replace("Perfect! ", "").replace("Fantastic! ", "").replace("Spot on! ", "").replace("You've got it! ", "").replace("Yes! ", "").replace("Well done! ", "").replace("You did it! ", "")}`);
+            currentQuestionIndex++;
+            loadQuestion();
+        }, 1000);
+    }
+}
+
+// Function to update the progress bar
+function updateProgressBar() {
+    const progressPercentage = (currentQuestionIndex / questions.length) * 100;
+    progressBar.style.width = `${progressPercentage}%`;
+}
+
+// Function to show the final results
+function showResults() {
+    quizScreen.classList.remove('active');
+    resultScreen.classList.add('active');
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+    
+    scoreText.textContent = `Your Score: ${score}/10`;
+    if (score >= 9) {
+        feedbackText.textContent = "You're a superstar! Your English skills are impressive!";
+    } else if (score >= 7) {
+        feedbackText.textContent = "You have a strong foundation in English! Keep practicing!";
+    } else if (score >= 5) {
+        feedbackText.textContent = "Good job! You're on the right track. Keep learning to improve!";
+    } else {
+        feedbackText.textContent = "Don't worry, every expert was once a beginner. Keep practicing, and you'll get better!";
+    }
+}
+
+// Event listeners for buttons
+startButton.addEventListener('click', startQuiz);
+restartButton.addEventListener('click', startQuiz);
